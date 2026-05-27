@@ -1,0 +1,79 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+import warnings
+warnings.filterwarnings('ignore')
+pd.set_option('display.max_columns',None)
+data = pd.read_csv('ecommerce_customer_data_custom_ratios.csv')
+print(data.info())
+data.describe()
+print(data.head())
+print("Shape of dataset:", data.shape)
+print(data.dtypes)
+print(data.isnull().sum())
+print(data.columns.tolist)
+print(data.columns)
+data.drop_duplicates(inplace=True)
+data = data.ffill()
+print(data.info())
+if 'Quantity' in data.columns and 'Product Price' in data.columns:
+  data['Total Purchase Amount'] = data['Quantity'] * data['Product Price']
+if 'Total Purchase Amount' in data.columns:
+    avg_spending = data['Total Purchase Amount'].mean()
+    print("Average Spending:", avg_spending)
+data['Purchase Date'] = pd.to_datetime(data['Purchase Date'],dayfirst=True,errors='coerce')
+print(data.head(10))
+data = data.dropna(subset=['Purchase Date'])
+latest_date = data['Purchase Date'].max()
+rfm = data.groupby('Customer ID').agg({
+    'Purchase Date': lambda x: (latest_date - x.max()).days,
+    'Customer ID': 'count',
+    'Total Purchase Amount': 'sum'})
+rfm.columns = ['Recency','Frequency','Monetary']
+print(rfm.head())
+rfm['R_Score'] = pd.qcut(rfm['Recency'], 4, labels=[4,3,2,1])
+rfm['F_Score'] = pd.qcut(rfm['Frequency'].rank(method='first'), 4, labels=[1,2,3,4])
+rfm['M_Score'] = pd.qcut(rfm['Monetary'], 4, labels=[1,2,3,4])
+rfm['RFM_Score'] = (
+    rfm['R_Score'].astype(str) +
+    rfm['F_Score'].astype(str) +
+    rfm['M_Score'].astype(str)
+)
+print(rfm.head())
+plt.figure(figsize=(8,5))
+sns.histplot(data['Total Purchase Amount'], bins=30, kde=True,color='purple')
+plt.title("Customer Spending Distribution",color='green')
+plt.xlabel("Total Spending",color='green')
+plt.ylabel("Count",color='green')
+plt.show()
+top_customers = rfm.sort_values(by='Monetary', ascending=False).head(10)
+plt.figure(figsize=(10,5))
+sns.barplot(x=top_customers.index, y=top_customers['Monetary'],color='green')
+plt.title("Top 10 Customers by Spending",color='red')
+plt.xlabel("Customer ID",color='red')
+plt.ylabel("Spending",color='red')
+plt.xticks(rotation=45)
+plt.show()
+plt.figure(figsize=(8,6))
+sns.scatterplot(
+    x=rfm['Frequency'],
+    y=rfm['Monetary'],color='darkblue'
+)
+plt.title("Frequency vs Monetary",color='green')
+plt.xlabel("Frequency",color='green')
+plt.ylabel("Monetary",color='green')
+plt.show()
+data['Month'] = data['Purchase Date'].dt.to_period('M')
+monthly_sales = data.groupby('Month')['Total Purchase Amount'].sum() 
+monthly_sales.plot(figsize=(10,5),color='maroon')
+plt.title("Monthly Sales Trend",color='orange')
+plt.xlabel("Month",color='orange')
+plt.ylabel("Sales",color='orange')
+plt.show()
+quantity_counts = data['Quantity'].value_counts().head(15)
+plt.figure(figsize=(10,5))
+plt.pie(quantity_counts,labels=quantity_counts.index,
+        autopct='%1.1f%%')
+plt.title('Quantity distribution',color='orange')
+plt.show()
