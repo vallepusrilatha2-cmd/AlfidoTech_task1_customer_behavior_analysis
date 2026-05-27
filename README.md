@@ -1,12 +1,12 @@
-Name : Vallepu Srilatha
+Name: Vallepu Srilatha
 
-Company : AlfidoTech
+Company: AlfidoTech
 
-ID : BS/REG/120352
+ID: BS/REG/120352
 
-Domain : Data Analytics
+Domain: Data Analytics
 
-Duration : may to june 2026
+Duration: may to june 2026
 
 **Overview of the project**
 
